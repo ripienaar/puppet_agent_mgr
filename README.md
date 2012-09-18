@@ -1,11 +1,27 @@
 What?
 =====
 
-While doing some prototype work of a new MCollective agent to manage Puppet version 3
-I needed to write a bunch of code to wrap the lock files, json files, pid files and
-yaml files that makes up the combined status of the Puppet Agent.
+While doing some prototype work of a new MCollective agent to manage Puppet
+version 3 I needed to write a bunch of code to wrap the lock files, json files,
+pid files and yaml files that makes up the combined status of the Puppet Agent.
 
-This is a wrapper lib that implements a single API around Puppet 2.7.x and 3.0.x
+The object of this library is to make it easier for external processes like
+monitoring scripts, mcollective etc to interface with all the locks and status
+files for the Puppet Agent. Puppet sometimes change how it behaves wrt these
+files so this API is versioned and returns a version specific manager instance
+that represents a consistant API. Currently it understands Puppet 2.7.x and
+Puppet 3.0.x.
+
+Additionally it interacts directly with the files in question and not via the
+Puppet libraries so it should be a bit faster, I do not know the Puppet
+libraries around locking and these files using the Puppet libraries directly
+might be isolated enough that there could be scope to DRY this up.
+
+It does require the puppet libraries and fetches the settings from the Puppet
+library.  At present it makes no effort to ensure it parses the right file or
+right section out of the file, this is a major short coming but I am not
+familiar enough with the Puppet settings classes to figure out the run_mode and
+so forth in the time I had.
 
 This is a work in progress specifically a few outstanding questions remain:
 
