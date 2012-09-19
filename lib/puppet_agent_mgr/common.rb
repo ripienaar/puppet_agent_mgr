@@ -1,5 +1,37 @@
 module PuppetAgentMgr
   module Common
+    extend Common
+
+    # is a catalog being applied rigt now?
+    def stopped?
+      !applying?
+    end
+
+    # is the daemon running but not applying a catalog
+    def idling?
+      (daemon_present? && !applying?)
+    end
+
+    # is the agent enabled
+    def enabled?
+      !disabled?
+    end
+
+    # seconds since the last catalog was applied
+    def since_lastrun
+      (Time.now - lastrun).to_i
+    end
+
+    # if a resource is being managed, resource in the syntax File[/x] etc
+    def managing_resource?(resource)
+      managed_resources.include?(resource.downcase)
+    end
+
+    # how many resources are managed
+    def managed_resources_count
+      managed_resources.size
+    end
+
     # simple utility to return a hash with lots of useful information about the state of the agent
     def status
       status = {:applying => applying?,
@@ -48,13 +80,13 @@ module PuppetAgentMgr
       seconds -= 60 * minutes
 
       if days > 1
-        return "%d days %02d hours %02d minutes %02d seconds" % [days, hours, minutes, seconds]
+        return "%d days %d hours %d minutes %02d seconds" % [days, hours, minutes, seconds]
 
       elsif days == 1
-        return "%d day %02d hours %02d minutes %02d seconds" % [days, hours, minutes, seconds]
+        return "%d day %d hours %d minutes %02d seconds" % [days, hours, minutes, seconds]
 
       elsif hours > 0
-        return "%d hours %02d minutes %02d seconds" % [hours, minutes, seconds]
+        return "%d hours %d minutes %02d seconds" % [hours, minutes, seconds]
 
       elsif minutes > 0
         return "%d minutes %02d seconds" % [minutes, seconds]

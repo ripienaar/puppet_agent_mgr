@@ -1,5 +1,6 @@
 module PuppetAgentMgr::V2
   module Unix
+    extend Unix
     # for a run based on the following options:
     #
     # :foreground_run - runs in the foreground a --test run
@@ -54,7 +55,7 @@ module PuppetAgentMgr::V2
     def __signal_running_daemon
       pid = File.read(Puppet[:pidfile])
 
-      if has_process_for_pid?(pid)
+      if __has_process_for_pid?(pid)
         begin
           Process.kill("USR1", Integer(pid))
         rescue Exception => e

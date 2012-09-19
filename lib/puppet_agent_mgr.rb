@@ -3,6 +3,7 @@ require 'puppet_agent_mgr/common'
 module PuppetAgentMgr
   def self.manager
     require 'puppet'
+    require 'json'
 
     if Puppet.version =~ /^(\d+)/
       case $1
@@ -15,7 +16,7 @@ module PuppetAgentMgr
           return PuppetAgentMgr::V3::Manager.new
 
         else
-          raise "Cannot manager Puppet version %s" % $1
+          raise "Cannot manage Puppet version %s" % $1
       end
     else
       raise "Cannot determine the Puppet major version"

@@ -1,5 +1,7 @@
 module PuppetAgentMgr::V2
   class Manager
+    include PuppetAgentMgr::Common
+
     if Puppet.features.microsoft_windows?
       require 'puppet_agent_mgr/v2/windows'
       include Windows
@@ -7,8 +9,6 @@ module PuppetAgentMgr::V2
       require 'puppet_agent_mgr/v2/unix'
       include Unix
     end
-
-    include PuppetAgentMgr::Common
 
     # enables the puppet agent, it can now start applying catalogs again
     def enable!
@@ -24,16 +24,6 @@ module PuppetAgentMgr::V2
       ""
     end
 
-    # if a resource is being managed, resource in the syntax File[/x] etc
-    def managing_resource?(resource)
-      managed_resources.include?(resource.downcase)
-    end
-
-    # how many resources are managed
-    def managed_resources_count
-      managed_resources.size
-    end
-
     # all the managed resources
     def managed_resources
       # need to add some caching here based on mtime of the resources file
@@ -42,11 +32,6 @@ module PuppetAgentMgr::V2
       File.readlines(Puppet[:resourcefile]).map do |resource|
         resource.chomp
       end
-    end
-
-    # seconds since the last catalog was applied
-    def since_lastrun
-      (Time.now - lastrun).to_i
     end
 
     # epoch time when the last catalog was applied
@@ -59,21 +44,6 @@ module PuppetAgentMgr::V2
     # the current lock message, always "" on 2.0
     def lock_message
       ""
-    end
-
-    # is a catalog being applied rigt now?
-    def stopped?
-      !applying?
-    end
-
-    # is the daemon running but not applying a catalog
-    def idling?
-      (daemon_present? && !applying?)
-    end
-
-    # is the agent enabled
-    def enabled?
-      !disabled?
     end
 
     # is the agent disabled

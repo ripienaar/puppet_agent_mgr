@@ -20,23 +20,13 @@ module PuppetAgentMgr::V3
     def disable!(msg=nil)
       raise "Already disabled" unless enabled?
 
-      msg = "Disabled using the Ruby API at %s" % Time.now.strftime("%c")
+      msg = "Disabled using the Ruby API at %s" % Time.now.strftime("%c") unless msg
 
       atomic_file(Puppet[:agent_disabled_lockfile]) do |f|
         f.print(JSON.dump(:disabled_message => msg))
       end
 
       msg
-    end
-
-    # if a resource is being managed, resource in the syntax File[/x] etc
-    def managing_resource?(resource)
-      managed_resources.include?(resource.downcase)
-    end
-
-    # how many resources are managed
-    def managed_resources_count
-      managed_resources.size
     end
 
     # all the managed resources
@@ -47,11 +37,6 @@ module PuppetAgentMgr::V3
       File.readlines(Puppet[:resourcefile]).map do |resource|
         resource.chomp
       end
-    end
-
-    # seconds since the last catalog was applied
-    def since_lastrun
-      (Time.now - lastrun).to_i
     end
 
     # epoch time when the last catalog was applied
@@ -69,21 +54,6 @@ module PuppetAgentMgr::V3
       else
         return ""
       end
-    end
-
-    # is a catalog being applied rigt now?
-    def stopped?
-      !applying?
-    end
-
-    # is the daemon running but not applying a catalog
-    def idling?
-      (daemon_present? && !applying?)
-    end
-
-    # is the agent enabled
-    def enabled?
-      !disabled?
     end
 
     # is the agent disabled
