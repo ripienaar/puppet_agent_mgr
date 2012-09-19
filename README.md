@@ -27,7 +27,6 @@ This is a work in progress specifically a few outstanding questions remain:
 
   * Puppet has a *run_mode* concept, I need to use this to be sure I get the agent config and not some other section
   * The *runonce* method should support applying tags, noop and a few other behaviors
-  * Tests need to be written, but I consider this a POC library so didn't make the effort
   * It supports Windows and Unix seperation but does not currently do any Windows stuff
 
 Available Methods?
