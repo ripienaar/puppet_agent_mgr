@@ -32,6 +32,46 @@ module PuppetAgentMgr
       managed_resources.size
     end
 
+    def run_in_foreground(noop)
+      command =["puppet", "agent", "--test", "--color=false"]
+      command << "--noop" if noop
+
+      %x[#{command.join(' ')}]
+    end
+
+    def run_in_background(noop)
+      command =["puppet", "agent", "--onetime", "--daemonize", "--color=false"]
+      command << "--noop" if noop
+
+      %x[#{command.join(' ')}]
+    end
+
+    # do a run based on the following options:
+    #
+    # :foreground_run - runs in the foreground a --test run
+    # :signal_daemon  - if the daemon is running, sends it USR1 to wake it up
+    # :noop           - does a noop run if possible
+    #
+    # else a single background run will be attempted but this will fail if a idling
+    # daemon is present and :signal_daemon was false
+    def runonce!(options={})
+      raise "Puppet is currently applying a catalog, cannot run now" if applying?
+      raise "Puppet is disabled, cannot run now" if disabled?
+
+      noop = options.fetch(:noop, false)
+      signal_daemon = options.fetch(:signal_daemon, true)
+      foreground_run = options.fetch(:foreground_run, false)
+
+      if foreground_run
+        run_in_foreground(noop)
+      elsif idling? && signal_daemon && !noop
+        signal_running_daemon
+      else
+        raise "Cannot run in the background if the daemon is present" if daemon_present?
+        run_in_background(noop)
+      end
+    end
+
     # simple utility to return a hash with lots of useful information about the state of the agent
     def status
       status = {:applying => applying?,
