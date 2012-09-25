@@ -128,8 +128,14 @@ You can do a noop run:
     >> m.runonce(:noop => true)
     => ""
 
-When doing noop or tags limited runs it will raise an exception if the daemon is
-already present as the only option available then is to trigger an immediate run
+And specify an environment:
+
+    >> m.runonce(:environment => "development")
+    => ""
+
+When doing noop, tags limited or specific environment runs it will raise an exception
+if the daemon is already present as the only option available then is to trigger an
+immediate run
 
 Contact?
 ========

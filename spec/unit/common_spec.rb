@@ -4,6 +4,108 @@ require 'spec_helper'
 
 module PuppetAgentMgr
   module Common
+    describe "#runonce!" do
+      it "should only accept valid option keys" do
+        expect { Common.runonce! :rspec => true }.to raise_error("Unknown option rspec specified")
+      end
+
+      it "should validate environment and tags" do
+        Common.expects(:validate_name).with("tag", "tag").returns(true).once
+        Common.expects(:validate_name).with("production", "environment").returns(true).once
+        Common.stubs(:idling?).returns(false)
+        Common.stubs(:applying?).returns(false)
+        Common.stubs(:disabled?).returns(false)
+        Common.stubs(:daemon_present?).returns(false)
+        Common.expects(:run_in_background)
+
+        Common.runonce!(:tags => ["tag"], :environment => "production")
+      end
+
+      it "should fail when a daemon is idling and tags, environment or noop is specified" do
+        Common.stubs(:idling?).returns(true)
+        Common.stubs(:applying?).returns(false)
+        Common.stubs(:disabled?).returns(false)
+
+        expect { Common.runonce!(:noop => true) }.to raise_error("Cannot specify tags, noop or environemnt when the daemon is running")
+        expect { Common.runonce!(:environment => "production") }.to raise_error("Cannot specify tags, noop or environemnt when the daemon is running")
+      end
+
+      it "should raise when it is already applying" do
+        Common.expects(:applying?).returns(true)
+        expect { Common.runonce! }.to raise_error(/Puppet is currently applying/)
+      end
+
+      it "should raise when it is disabled" do
+        Common.stubs(:applying?).returns(false)
+        Common.expects(:disabled?).returns(true)
+        expect { Common.runonce! }.to raise_error(/Puppet is disabled/)
+      end
+
+      it "should do a foreground run when requested" do
+        Common.stubs(:applying?).returns(false)
+        Common.stubs(:disabled?).returns(false)
+        Common.stubs(:daemon_present?).returns(false)
+
+        Common.expects(:run_in_foreground)
+        Common.expects(:run_in_background).never
+        Common.expects(:signal_running_daemon).never
+
+        Common.runonce!(:foreground_run => true)
+      end
+
+      it "should support sending a signal to the daemon when it is idling" do
+        Common.stubs(:applying?).returns(false)
+        Common.stubs(:disabled?).returns(false)
+        Common.expects(:idling?).returns(true).twice
+
+        Common.expects(:run_in_foreground).never
+        Common.expects(:run_in_background).never
+        Common.expects(:signal_running_daemon)
+
+        Common.runonce!
+      end
+
+      it "should not signal a daemon when not allowed and it is idling" do
+        Common.stubs(:applying?).returns(false)
+        Common.stubs(:disabled?).returns(false)
+        Common.expects(:idling?).returns(true).twice
+        Common.expects(:daemon_present?).returns(true)
+
+        Common.expects(:run_in_foreground).never
+        Common.expects(:signal_running_daemon).never
+        Common.expects(:run_in_background).never
+
+        expect { Common.runonce!(:signal_daemon => false) }.to raise_error(/Cannot run.+if the daemon is present/)
+      end
+
+      it "should do a background run if the daemon is not present" do
+        Common.stubs(:applying?).returns(false)
+        Common.stubs(:disabled?).returns(false)
+        Common.expects(:idling?).returns(false).twice
+        Common.expects(:daemon_present?).returns(false)
+
+        Common.expects(:run_in_foreground).never
+        Common.expects(:signal_running_daemon).never
+        Common.expects(:run_in_background)
+
+        Common.runonce!
+      end
+    end
+
+    describe "#validate_name" do
+      it "should pass for valid names" do
+        ["foo", "foo_bar", "foobar", "foobar123"].each do |name|
+          Common.validate_name(name, "rspec")
+        end
+      end
+
+      it "should fail for invalid names" do
+        ["foo bar", "foo-bar", "1234foobar", "FooBar", "fooBar"].each do |name|
+          expect { Common.validate_name(name, "rspec") }.to raise_error("Invalid input for 'rspec' supplied")
+        end
+      end
+    end
+
     describe "#stopped?" do
       it "should be the opposite of applying?" do
         Common.expects(:applying?).returns(false)
