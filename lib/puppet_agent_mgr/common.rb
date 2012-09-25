@@ -32,16 +32,18 @@ module PuppetAgentMgr
       managed_resources.size
     end
 
-    def run_in_foreground(noop)
+    def run_in_foreground(noop, tags)
       command =["puppet", "agent", "--test", "--color=false"]
       command << "--noop" if noop
+      command << "--tags %s" % tags.join(",") if !tags.empty?
 
       %x[#{command.join(' ')}]
     end
 
-    def run_in_background(noop)
+    def run_in_background(noop, tags)
       command =["puppet", "agent", "--onetime", "--daemonize", "--color=false"]
       command << "--noop" if noop
+      command << "--tags %s" % tags.join(",") if !tags.empty?
 
       %x[#{command.join(' ')}]
     end
@@ -51,6 +53,7 @@ module PuppetAgentMgr
     # :foreground_run - runs in the foreground a --test run
     # :signal_daemon  - if the daemon is running, sends it USR1 to wake it up
     # :noop           - does a noop run if possible
+    # :tags           - an array of tags to limit the run to
     #
     # else a single background run will be attempted but this will fail if a idling
     # daemon is present and :signal_daemon was false
@@ -61,14 +64,21 @@ module PuppetAgentMgr
       noop = options.fetch(:noop, false)
       signal_daemon = options.fetch(:signal_daemon, true)
       foreground_run = options.fetch(:foreground_run, false)
+      tags = [options.fetch(:tags, [])].flatten
+
+      tags.each {|tag| raise "Invalid tag '#{tag}' supplied" unless tag =~ /\A[a-z][a-z0-9_]*\Z/}
+
+      if idling? && signal_daemon && (noop || !tags.empty?)
+        raise "Cannot specify tags or noop when the daemon is running"
+      end
 
       if foreground_run
-        run_in_foreground(noop)
-      elsif idling? && signal_daemon && !noop
+        run_in_foreground(noop, tags)
+      elsif idling? && signal_daemon
         signal_running_daemon
       else
         raise "Cannot run in the background if the daemon is present" if daemon_present?
-        run_in_background(noop)
+        run_in_background(noop, tags)
       end
     end
 

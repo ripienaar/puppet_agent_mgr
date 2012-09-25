@@ -47,7 +47,7 @@ Available Methods?
   * *disabled?* is the agent locked?
   * *load_summary* loads the last run summary, returns a emptyish structure when nothing is found
   * *daemon_present?* is the daemon in the process lsit
-  * *runonce!* triggers a puppet agent. Can signal a running daemon. Pass :foreground_run=>true to force a foreground run.  Pass :signal_daemon=>false to disable sending signals.
+  * *runonce!* triggers a puppet agent. Can signal a running daemon and take various flags commonly used
 
 Using?
 ------
@@ -117,6 +117,19 @@ And finally you can kick off a run:
     => "..full puppet run output here"
     >> m.runonce
     => ""
+
+You can limit it to specific tags:
+
+    >> m.runonce(:tags => ["foo", "bar"])
+    => ""
+
+You can do a noop run:
+
+    >> m.runonce(:noop => true)
+    => ""
+
+When doing noop or tags limited runs it will raise an exception if the daemon is
+already present as the only option available then is to trigger an immediate run
 
 Contact?
 ========
