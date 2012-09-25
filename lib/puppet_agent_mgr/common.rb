@@ -32,22 +32,38 @@ module PuppetAgentMgr
       managed_resources.size
     end
 
-    def run_in_foreground(noop, tags, environment)
+    def run_in_foreground(clioptions)
       command =["puppet", "agent", "--test", "--color=false"]
-      command << "--noop" if noop
-      command << "--tags %s" % tags.join(",") if !tags.empty?
-      command << "--environment %s" % environment if environment
+      command.concat(clioptions)
 
       %x[#{command.join(' ')}]
     end
 
-    def run_in_background(noop, tags, environment)
+    def run_in_background(clioptions)
       command =["puppet", "agent", "--onetime", "--daemonize", "--color=false"]
-      command << "--noop" if noop
-      command << "--tags %s" % tags.join(",") if !tags.empty?
-      command << "--environment %s" % environment if environment
+      command.concat(clioptions)
 
       %x[#{command.join(' ')}]
+    end
+
+    def create_common_puppet_cli(noop, tags, environment, server)
+      opts = []
+
+      validate_name(environment, "environment") if environment
+      tags.flatten.each {|input| validate_name(input, "tag") }
+
+      (host, port) = server.to_s.split(":")
+
+      raise("Invalid hostname '%s' specified" % host) if host && !(host =~ /\A(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\Z/)
+      raise("Invalid master port '%s' specified" % port) if port && !(port =~ /\A\d+\Z/)
+
+      opts << "--noop" if noop
+      opts << "--tags %s" % tags.join(",") if !tags.empty?
+      opts << "--environment %s" % environment if environment
+      opts << "--server %s" % host if host
+      opts << "--masterport %s" % port if port
+
+      opts
     end
 
     # do a run based on the following options:
@@ -57,11 +73,12 @@ module PuppetAgentMgr
     # :noop           - does a noop run if possible
     # :tags           - an array of tags to limit the run to
     # :environment    - the environment to run
+    # :server         - the puppet master to use, can be some.host or some.host:port
     #
     # else a single background run will be attempted but this will fail if a idling
     # daemon is present and :signal_daemon was false
     def runonce!(options={})
-      valid_options = [:noop, :signal_daemon, :foreground_run, :tags, :environment]
+      valid_options = [:noop, :signal_daemon, :foreground_run, :tags, :environment, :server]
 
       options.keys.each do |opt|
         raise("Unknown option %s specified" % opt) unless valid_options.include?(opt)
@@ -75,21 +92,21 @@ module PuppetAgentMgr
       foreground_run = options.fetch(:foreground_run, false)
       environment = options[:environment]
       tags = [ options[:tags] ].flatten.compact
+      server = options[:server]
 
-      validate_name(environment, "environment") if environment
-      tags.flatten.each {|input| validate_name(input, "tag") }
+      clioptions = create_common_puppet_cli(noop, tags, environment, server)
 
-      if idling? && signal_daemon && (noop || !tags.empty? || environment)
-        raise "Cannot specify tags, noop or environemnt when the daemon is running"
+      if idling? && signal_daemon && !clioptions.empty?
+        raise "Cannot specify any custom puppet options when the daemon is running"
       end
 
       if foreground_run
-        run_in_foreground(noop, tags, environment)
+        run_in_foreground(clioptions)
       elsif idling? && signal_daemon
         signal_running_daemon
       else
         raise "Cannot run in the background if the daemon is present" if daemon_present?
-        run_in_background(noop, tags, environment)
+        run_in_background(clioptions)
       end
     end
 

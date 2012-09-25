@@ -110,7 +110,6 @@ Puppet records which resources it is managing, this information is available:
     >> m.managing_resource?("File[/srv/www]")
     => false
 
-
 And finally you can kick off a run:
 
     >> m.runonce :foreground_run => true
@@ -133,9 +132,14 @@ And specify an environment:
     >> m.runonce(:environment => "development")
     => ""
 
-When doing noop, tags limited or specific environment runs it will raise an exception
-if the daemon is already present as the only option available then is to trigger an
-immediate run
+And even a custom master and port:
+
+    >> m.runonce(:server => "dev-puppet.example.com:1234")
+    => ""
+
+When doing noop, tags limited, specific host or specific environment runs it
+will raise an exception if the daemon is already present as the only option
+available then is to trigger an immediate run
 
 Contact?
 ========

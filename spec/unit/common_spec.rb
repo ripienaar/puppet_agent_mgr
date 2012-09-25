@@ -4,21 +4,38 @@ require 'spec_helper'
 
 module PuppetAgentMgr
   module Common
+    describe "#create_common_puppet_cli" do
+      it "should test the environment and tags" do
+        Common.expects(:validate_name).with("tag", "tag").returns(true).once
+        Common.expects(:validate_name).with("production", "environment").returns(true).once
+        Common.create_common_puppet_cli(nil, ["tag"], "production", nil)
+      end
+
+      it "should test the host and port" do
+        expect { Common.create_common_puppet_cli(nil, [], nil, "foo bar") }.to raise_error(/Invalid hostname/)
+        expect { Common.create_common_puppet_cli(nil, [], nil, "foo:bar") }.to raise_error(/Invalid master port/)
+
+        Common.create_common_puppet_cli(nil, [], nil, "foo:10").should == ["--server foo", "--masterport 10"]
+        Common.create_common_puppet_cli(nil, [], nil, "foo").should == ["--server foo"]
+      end
+
+      it "should support noop" do
+        Common.create_common_puppet_cli(true, [], nil, nil).should == ["--noop"]
+      end
+
+      it "should support tags" do
+        Common.create_common_puppet_cli(nil, ["one"], nil, nil).should == ["--tags one"]
+        Common.create_common_puppet_cli(nil, ["one", "two"], nil, nil).should == ["--tags one,two"]
+      end
+
+      it "should support environment" do
+        Common.create_common_puppet_cli(nil, [], "production", nil).should == ["--environment production"]
+      end
+    end
+
     describe "#runonce!" do
       it "should only accept valid option keys" do
         expect { Common.runonce! :rspec => true }.to raise_error("Unknown option rspec specified")
-      end
-
-      it "should validate environment and tags" do
-        Common.expects(:validate_name).with("tag", "tag").returns(true).once
-        Common.expects(:validate_name).with("production", "environment").returns(true).once
-        Common.stubs(:idling?).returns(false)
-        Common.stubs(:applying?).returns(false)
-        Common.stubs(:disabled?).returns(false)
-        Common.stubs(:daemon_present?).returns(false)
-        Common.expects(:run_in_background)
-
-        Common.runonce!(:tags => ["tag"], :environment => "production")
       end
 
       it "should fail when a daemon is idling and tags, environment or noop is specified" do
@@ -26,8 +43,8 @@ module PuppetAgentMgr
         Common.stubs(:applying?).returns(false)
         Common.stubs(:disabled?).returns(false)
 
-        expect { Common.runonce!(:noop => true) }.to raise_error("Cannot specify tags, noop or environemnt when the daemon is running")
-        expect { Common.runonce!(:environment => "production") }.to raise_error("Cannot specify tags, noop or environemnt when the daemon is running")
+        expect { Common.runonce!(:noop => true) }.to raise_error("Cannot specify any custom puppet options when the daemon is running")
+        expect { Common.runonce!(:environment => "production") }.to raise_error("Cannot specify any custom puppet options when the daemon is running")
       end
 
       it "should raise when it is already applying" do
