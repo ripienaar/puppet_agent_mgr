@@ -80,7 +80,8 @@ module PuppetAgentMgr
       opts << "--splay" if splay == true
       opts << "--no-splay" if splay == false
       opts << "--splaylimit %s" % splaylimit if splaylimit
-      opts << "--noop" if noop
+      opts << "--noop" if noop == true
+      opts << "--no-noop" if noop == false
       opts << "--environment %s" % environment if environment
       opts << "--server %s" % host if host
       opts << "--masterport %s" % port if port
@@ -92,7 +93,7 @@ module PuppetAgentMgr
     #
     # :foreground_run - runs in the foreground a --test run
     # :signal_daemon  - if the daemon is running, sends it USR1 to wake it up
-    # :noop           - does a noop run if possible
+    # :noop           - enables or disabled noop mode based on true/false
     # :tags           - an array of tags to limit the run to
     # :environment    - the environment to run
     # :server         - the puppet master to use, can be some.host or some.host:port
@@ -113,7 +114,7 @@ module PuppetAgentMgr
 
       splay = options.fetch(:splay, nil)
       splaylimit = options.fetch(:splaylimit, nil)
-      noop = options.fetch(:noop, false)
+      noop = options.fetch(:noop, nil)
       signal_daemon = options.fetch(:signal_daemon, true)
       foreground_run = options.fetch(:foreground_run, false)
       environment = options[:environment]

@@ -10,14 +10,16 @@ describe PuppetAgentMgr do
 
     it "should support puppet 2.x.x managers" do
       Puppet.expects(:version).returns("2.7.12")
+      PuppetAgentMgr::V2::Manager.expects(:new)
 
-      PuppetAgentMgr.manager.class.should == PuppetAgentMgr::V2::Manager
+      PuppetAgentMgr.manager
     end
 
     it "should support puppet 3.x.x managers" do
       Puppet.expects(:version).returns("3.0.0")
+      PuppetAgentMgr::V3::Manager.expects(:new)
 
-      PuppetAgentMgr.manager.class.should == PuppetAgentMgr::V3::Manager
+      PuppetAgentMgr.manager
     end
 
     it "should fail with a friendly error for unsupported puppet versions" do
