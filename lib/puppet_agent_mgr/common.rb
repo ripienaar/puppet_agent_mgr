@@ -46,6 +46,16 @@ module PuppetAgentMgr
       %x[#{command.join(' ')}]
     end
 
+    def validate_name(name)
+      if name.length == 1
+        return false unless name =~ /\A[a-zA-Z]\Z/
+      else
+        return false unless name =~ /\A[a-zA-Z0-9_]+\Z/
+      end
+
+      true
+    end
+
     def create_common_puppet_cli(noop, tags, environment, server)
       opts = []
 
@@ -53,14 +63,12 @@ module PuppetAgentMgr
 
       raise("Invalid hostname '%s' specified" % host) if host && !(host =~ /\A(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\Z/)
       raise("Invalid master port '%s' specified" % port) if port && !(port =~ /\A\d+\Z/)
-      raise("Invalid environment '%s' specified" % environment) if environment && !(environment =~ /\A[a-zA-Z0-9_]+\Z/)
+      raise("Invalid environment '%s' specified" % environment) if environment && !validate_name(environment)
 
       unless tags.empty?
-        tags.each do |tag|
-          if tag =~ /::/
-            raise("Invalid tag '%s' specified" % tag) unless tag =~ /\A([a-z][a-z0-9_]*)?(::[a-z][a-z0-9_]*)*::[a-zA-Z0-9_]+\Z/
-          else
-            raise("Invalid tag '%s' specified" % tag) unless tag =~ /\A[a-zA-Z0-9_]+\Z/
+        [tags].flatten.each do |tag|
+          tag.split("::").each do |part|
+            raise("Invalid tag '%s' specified" % tag) unless validate_name(part)
           end
         end
 

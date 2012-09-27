@@ -4,6 +4,21 @@ require 'spec_helper'
 
 module PuppetAgentMgr
   module Common
+    describe "validate_name" do
+      it "should test single character variable names" do
+        Common.validate_name("1").should == false
+        Common.validate_name("a").should == true
+        Common.validate_name("_").should == false
+      end
+
+      it "should test multi character variable names" do
+        Common.validate_name("1a").should == true
+        Common.validate_name("ab").should == true
+        Common.validate_name("a_b").should == true
+        Common.validate_name("a-b").should == false
+      end
+    end
+
     describe "#create_common_puppet_cli" do
       it "should test the host and port" do
         expect { Common.create_common_puppet_cli(nil, [], nil, "foo bar") }.to raise_error(/Invalid hostname/)
@@ -32,6 +47,7 @@ module PuppetAgentMgr
 
       it "should sanity check tags" do
         expect { Common.create_common_puppet_cli(nil, ["one", "tw o"], nil, nil) }.to raise_error("Invalid tag 'tw o' specified")
+        expect { Common.create_common_puppet_cli(nil, ["one::two", "tw o"], nil, nil) }.to raise_error("Invalid tag 'tw o' specified")
       end
     end
 
