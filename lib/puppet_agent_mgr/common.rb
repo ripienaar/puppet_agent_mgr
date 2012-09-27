@@ -49,16 +49,25 @@ module PuppetAgentMgr
     def create_common_puppet_cli(noop, tags, environment, server)
       opts = []
 
-      validate_name(environment, "environment") if environment
-      tags.flatten.each {|input| validate_name(input, "tag") }
-
       (host, port) = server.to_s.split(":")
 
       raise("Invalid hostname '%s' specified" % host) if host && !(host =~ /\A(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\Z/)
       raise("Invalid master port '%s' specified" % port) if port && !(port =~ /\A\d+\Z/)
+      raise("Invalid environment '%s' specified" % environment) if environment && !(environment =~ /\A[a-zA-Z0-9_]+\Z/)
+
+      unless tags.empty?
+        tags.each do |tag|
+          if tag =~ /::/
+            raise("Invalid tag '%s' specified" % tag) unless tag =~ /\A([a-z][a-z0-9_]*)?(::[a-z][a-z0-9_]*)*::[a-zA-Z0-9_]+\Z/
+          else
+            raise("Invalid tag '%s' specified" % tag) unless tag =~ /\A[a-zA-Z0-9_]+\Z/
+          end
+        end
+
+        opts << "--tags %s" % tags.join(",") if !tags.empty?
+      end
 
       opts << "--noop" if noop
-      opts << "--tags %s" % tags.join(",") if !tags.empty?
       opts << "--environment %s" % environment if environment
       opts << "--server %s" % host if host
       opts << "--masterport %s" % port if port
@@ -145,12 +154,6 @@ module PuppetAgentMgr
 
       tempfile.close
       File.rename(tempfile.path, file)
-    end
-
-    # puppet classes, tags and enviroments have strict rules
-    # plus we wouldnt want to be subject to shell injections
-    def validate_name(name, description)
-      raise("Invalid input for '%s' supplied" % description) unless name =~ /\A[a-z][a-z0-9_]*\Z/
     end
 
     def seconds_to_human(seconds)

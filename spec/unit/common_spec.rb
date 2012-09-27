@@ -5,12 +5,6 @@ require 'spec_helper'
 module PuppetAgentMgr
   module Common
     describe "#create_common_puppet_cli" do
-      it "should test the environment and tags" do
-        Common.expects(:validate_name).with("tag", "tag").returns(true).once
-        Common.expects(:validate_name).with("production", "environment").returns(true).once
-        Common.create_common_puppet_cli(nil, ["tag"], "production", nil)
-      end
-
       it "should test the host and port" do
         expect { Common.create_common_puppet_cli(nil, [], nil, "foo bar") }.to raise_error(/Invalid hostname/)
         expect { Common.create_common_puppet_cli(nil, [], nil, "foo:bar") }.to raise_error(/Invalid master port/)
@@ -30,6 +24,14 @@ module PuppetAgentMgr
 
       it "should support environment" do
         Common.create_common_puppet_cli(nil, [], "production", nil).should == ["--environment production"]
+      end
+
+      it "should sanity check environment" do
+        expect { Common.create_common_puppet_cli(nil, [], "prod uction", nil) }.to raise_error("Invalid environment 'prod uction' specified")
+      end
+
+      it "should sanity check tags" do
+        expect { Common.create_common_puppet_cli(nil, ["one", "tw o"], nil, nil) }.to raise_error("Invalid tag 'tw o' specified")
       end
     end
 
@@ -106,20 +108,6 @@ module PuppetAgentMgr
         Common.expects(:run_in_background)
 
         Common.runonce!
-      end
-    end
-
-    describe "#validate_name" do
-      it "should pass for valid names" do
-        ["foo", "foo_bar", "foobar", "foobar123"].each do |name|
-          Common.validate_name(name, "rspec")
-        end
-      end
-
-      it "should fail for invalid names" do
-        ["foo bar", "foo-bar", "1234foobar", "FooBar", "fooBar"].each do |name|
-          expect { Common.validate_name(name, "rspec") }.to raise_error("Invalid input for 'rspec' supplied")
-        end
       end
     end
 
