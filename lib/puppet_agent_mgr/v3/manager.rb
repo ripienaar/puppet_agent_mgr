@@ -10,6 +10,14 @@ module PuppetAgentMgr::V3
 
     include PuppetAgentMgr::Common
 
+    def initialize
+      # there has to be a better way...
+      require 'puppet/util/run_mode'
+      Puppet.settings.preferred_run_mode = :agent
+      run_mode = Puppet::Util::RunMode[ Puppet.settings.preferred_run_mode ]
+      Puppet.settings.initialize_app_defaults(Puppet::Settings.app_defaults_for_run_mode(run_mode))
+    end
+
     # enables the puppet agent, it can now start applying catalogs again
     def enable!
       raise "Already enabled" if enabled?
