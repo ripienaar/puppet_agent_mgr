@@ -21,33 +21,42 @@ module PuppetAgentMgr
 
     describe "#create_common_puppet_cli" do
       it "should test the host and port" do
-        expect { Common.create_common_puppet_cli(nil, [], nil, "foo bar") }.to raise_error(/Invalid hostname/)
-        expect { Common.create_common_puppet_cli(nil, [], nil, "foo:bar") }.to raise_error(/Invalid master port/)
+        expect { Common.create_common_puppet_cli(nil, nil, nil, "foo bar") }.to raise_error(/Invalid hostname/)
+        expect { Common.create_common_puppet_cli(nil, nil, nil, "foo:bar") }.to raise_error(/Invalid master port/)
 
-        Common.create_common_puppet_cli(nil, [], nil, "foo:10").should == ["--server foo", "--masterport 10"]
-        Common.create_common_puppet_cli(nil, [], nil, "foo").should == ["--server foo"]
+        Common.create_common_puppet_cli(nil, nil, nil, "foo:10").should == ["--server foo", "--masterport 10"]
+        Common.create_common_puppet_cli(nil, nil, nil, "foo").should == ["--server foo"]
       end
 
       it "should support noop" do
-        Common.create_common_puppet_cli(true, [], nil, nil).should == ["--noop"]
+        Common.create_common_puppet_cli(true, nil).should == ["--noop"]
       end
 
       it "should support tags" do
-        Common.create_common_puppet_cli(nil, ["one"], nil, nil).should == ["--tags one"]
-        Common.create_common_puppet_cli(nil, ["one", "two"], nil, nil).should == ["--tags one,two"]
+        Common.create_common_puppet_cli(nil, ["one"]).should == ["--tags one"]
+        Common.create_common_puppet_cli(nil, ["one", "two"]).should == ["--tags one,two"]
       end
 
       it "should support environment" do
-        Common.create_common_puppet_cli(nil, [], "production", nil).should == ["--environment production"]
+        Common.create_common_puppet_cli(nil, nil, "production").should == ["--environment production"]
       end
 
       it "should sanity check environment" do
-        expect { Common.create_common_puppet_cli(nil, [], "prod uction", nil) }.to raise_error("Invalid environment 'prod uction' specified")
+        expect { Common.create_common_puppet_cli(nil, nil, "prod uction") }.to raise_error("Invalid environment 'prod uction' specified")
       end
 
       it "should sanity check tags" do
-        expect { Common.create_common_puppet_cli(nil, ["one", "tw o"], nil, nil) }.to raise_error("Invalid tag 'tw o' specified")
-        expect { Common.create_common_puppet_cli(nil, ["one::two", "tw o"], nil, nil) }.to raise_error("Invalid tag 'tw o' specified")
+        expect { Common.create_common_puppet_cli(nil, ["one", "tw o"]) }.to raise_error("Invalid tag 'tw o' specified")
+        expect { Common.create_common_puppet_cli(nil, ["one::two", "tw o"]) }.to raise_error("Invalid tag 'tw o' specified")
+      end
+
+      it "should support splay" do
+        Common.create_common_puppet_cli(nil, nil, nil, nil, true).should == ["--splay"]
+        Common.create_common_puppet_cli(nil, nil, nil, nil, false).should == ["--no-splay"]
+      end
+
+      it "should support splaylimit" do
+        Common.create_common_puppet_cli(nil, nil, nil, nil, true, 10).should == ["--splay", "--splaylimit 10"]
       end
     end
 

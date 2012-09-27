@@ -56,14 +56,16 @@ module PuppetAgentMgr
       true
     end
 
-    def create_common_puppet_cli(noop, tags, environment, server)
+    def create_common_puppet_cli(noop=nil, tags=[], environment=nil, server=nil, splay=nil, splaylimit=nil)
       opts = []
+      tags = [tags].flatten.compact
 
       (host, port) = server.to_s.split(":")
 
       raise("Invalid hostname '%s' specified" % host) if host && !(host =~ /\A(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])\Z/)
       raise("Invalid master port '%s' specified" % port) if port && !(port =~ /\A\d+\Z/)
       raise("Invalid environment '%s' specified" % environment) if environment && !validate_name(environment)
+      raise("Invalid splaylimit '%s' specified" % splaylimit) if splaylimit && !splaylimit.is_a?(Fixnum)
 
       unless tags.empty?
         [tags].flatten.each do |tag|
@@ -75,6 +77,9 @@ module PuppetAgentMgr
         opts << "--tags %s" % tags.join(",") if !tags.empty?
       end
 
+      opts << "--splay" if splay == true
+      opts << "--no-splay" if splay == false
+      opts << "--splaylimit %s" % splaylimit if splaylimit
       opts << "--noop" if noop
       opts << "--environment %s" % environment if environment
       opts << "--server %s" % host if host
@@ -91,11 +96,13 @@ module PuppetAgentMgr
     # :tags           - an array of tags to limit the run to
     # :environment    - the environment to run
     # :server         - the puppet master to use, can be some.host or some.host:port
+    # :splay          - enables or disables splay based on true/false
+    # :splaylimit     - set the maximum splay time
     #
     # else a single background run will be attempted but this will fail if a idling
     # daemon is present and :signal_daemon was false
     def runonce!(options={})
-      valid_options = [:noop, :signal_daemon, :foreground_run, :tags, :environment, :server]
+      valid_options = [:noop, :signal_daemon, :foreground_run, :tags, :environment, :server, :splay, :splaylimit]
 
       options.keys.each do |opt|
         raise("Unknown option %s specified" % opt) unless valid_options.include?(opt)
@@ -104,6 +111,8 @@ module PuppetAgentMgr
       raise "Puppet is currently applying a catalog, cannot run now" if applying?
       raise "Puppet is disabled, cannot run now" if disabled?
 
+      splay = options.fetch(:splay, nil)
+      splaylimit = options.fetch(:splaylimit, nil)
       noop = options.fetch(:noop, false)
       signal_daemon = options.fetch(:signal_daemon, true)
       foreground_run = options.fetch(:foreground_run, false)
@@ -111,7 +120,7 @@ module PuppetAgentMgr
       tags = [ options[:tags] ].flatten.compact
       server = options[:server]
 
-      clioptions = create_common_puppet_cli(noop, tags, environment, server)
+      clioptions = create_common_puppet_cli(noop, tags, environment, server, splay, splaylimit)
 
       if idling? && signal_daemon && !clioptions.empty?
         raise "Cannot specify any custom puppet options when the daemon is running"

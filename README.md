@@ -137,6 +137,21 @@ And even a custom master and port:
     >> m.runonce(:server => "dev-puppet.example.com:1234")
     => ""
 
+You can force splaying:
+
+    >> m.runonce(:splay => true)
+    => ""
+
+...or force disable it
+
+    >> m.runonce(:splay => false)
+    => ""
+
+...with a custom time limit
+
+    >> m.runonce(:splay => true, :splaylimit=100)
+    => ""
+
 When doing noop, tags limited, specific host or specific environment runs it
 will raise an exception if the daemon is already present as the only option
 available then is to trigger an immediate run
