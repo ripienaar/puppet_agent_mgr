@@ -3,8 +3,8 @@ module PuppetAgentMgr::V3
     extend Unix
     # is the agent daemon currently in the unix process list?
     def daemon_present?
-      if File.exist?(Puppet[:agentpidfile])
-        return has_process_for_pid?(File.read(Puppet[:agentpidfile]))
+      if File.exist?(Puppet[:agent_catalog_run_lockfile])
+        return has_process_for_pid?(File.read(Puppet[:agent_catalog_run_lockfile]))
       end
 
       return false
@@ -24,7 +24,7 @@ module PuppetAgentMgr::V3
     end
 
     def signal_running_daemon
-      pid = File.read(Puppet[:agentpidfile])
+      pid = File.read(Puppet[:agent_catalog_run_lockfile])
 
       if has_process_for_pid?(pid)
         begin

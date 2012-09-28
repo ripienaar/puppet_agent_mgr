@@ -8,13 +8,13 @@ module PuppetAgentMgr::V3
   describe Unix do
    describe "#daemon_present?" do
       it "should return false if the pidfile does not exist" do
-        File.expects(:exist?).with("agentpidfile").returns(false)
+        File.expects(:exist?).with("agent_catalog_run_lockfile").returns(false)
         Unix.daemon_present?.should == false
       end
 
       it "should check the pid if the pidfile exist" do
-        File.expects(:exist?).with("agentpidfile").returns(true)
-        File.expects(:read).with("agentpidfile").returns(1)
+        File.expects(:exist?).with("agent_catalog_run_lockfile").returns(true)
+        File.expects(:read).with("agent_catalog_run_lockfile").returns(1)
         Unix.expects(:has_process_for_pid?).with(1).returns(true)
         Unix.daemon_present?.should == true
       end
@@ -59,7 +59,7 @@ module PuppetAgentMgr::V3
 
     describe "#signal_running_daemon" do
       it "should check if the process is present and send USR1 if present" do
-        File.expects(:read).with("agentpidfile").returns("1")
+        File.expects(:read).with("agent_catalog_run_lockfile").returns("1")
         Unix.expects(:has_process_for_pid?).with("1").returns(true)
         Process.expects(:kill).with("USR1", 1)
 
@@ -67,7 +67,7 @@ module PuppetAgentMgr::V3
       end
 
       it "should fall back to background run if the pid is stale" do
-        File.expects(:read).with("agentpidfile").returns("1")
+        File.expects(:read).with("agent_catalog_run_lockfile").returns("1")
         Unix.expects(:has_process_for_pid?).with("1").returns(false)
         Unix.expects(:run_in_background)
 
