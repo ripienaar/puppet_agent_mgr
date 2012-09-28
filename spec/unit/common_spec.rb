@@ -29,6 +29,7 @@ module PuppetAgentMgr
       end
 
       it "should support noop" do
+        Common.create_common_puppet_cli(nil).should == []
         Common.create_common_puppet_cli(true).should == ["--noop"]
         Common.create_common_puppet_cli(false).should == ["--no-noop"]
       end

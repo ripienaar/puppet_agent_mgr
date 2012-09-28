@@ -21,6 +21,14 @@ module Puppet
     what.to_s
   end
 
+  def self.settings(settings=nil)
+    if settings
+      @settings = OpenStruct.new(settings)
+    else
+      @settings ||= OpenStruct.new(:app_defaults_initialized? => true)
+    end
+  end
+
   def self.features(features=nil)
     if features
       @features = OpenStruct.new(features)
