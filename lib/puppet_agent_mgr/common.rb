@@ -33,17 +33,19 @@ module PuppetAgentMgr
     end
 
     def run_in_foreground(clioptions, execute=true)
-      command =["puppet", "agent", "--test", "--color=false"]
-      command.concat(clioptions)
+      options = ["--test", "--color=false"].concat(clioptions)
 
-      %x[#{command.join(' ')}]
+      return options unless execute
+
+      %x[puppet agent #{options.join(' ')}]
     end
 
     def run_in_background(clioptions, execute=true)
-      command =["puppet", "agent", "--onetime", "--daemonize", "--color=false"]
-      command.concat(clioptions)
+      options =["--onetime", "--daemonize", "--color=false"].concat(clioptions)
 
-      %x[#{command.join(' ')}]
+      return options unless execute
+
+      %x[puppet agent #{options.join(' ')}]
     end
 
     def validate_name(name)
@@ -128,14 +130,14 @@ module PuppetAgentMgr
       end
 
       if foreground_run
-        return :foreground_run, clioptions if options[:options_only]
+        return :foreground_run, run_in_foreground(clioptions, false) if options[:options_only]
         return run_in_foreground(clioptions)
       elsif idling? && signal_daemon
         return :signal_running_daemon, clioptions if options[:options_only]
         return signal_running_daemon
       else
         raise "Cannot run in the background if the daemon is present" if daemon_present?
-        return :run_in_background, clioptions if options[:options_only]
+        return :run_in_background, run_in_background(clioptions, false) if options[:options_only]
         return run_in_background(clioptions)
       end
     end

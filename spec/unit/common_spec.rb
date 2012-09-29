@@ -97,7 +97,17 @@ module PuppetAgentMgr
         Common.expects(:signal_running_daemon).never
 
         Common.runonce!(:foreground_run => true)
-        Common.runonce!(:foreground_run => true, :options_only => true).should == [:foreground_run, []]
+      end
+
+      it "should support returning foreground run arguments only" do
+        Common.stubs(:applying?).returns(false)
+        Common.stubs(:disabled?).returns(false)
+        Common.stubs(:daemon_present?).returns(false)
+
+        Common.expects(:run_in_background).never
+        Common.expects(:signal_running_daemon).never
+
+        Common.runonce!(:foreground_run => true, :options_only => true).should == [:foreground_run, ["--test", "--color=false"]]
       end
 
       it "should support sending a signal to the daemon when it is idling" do
@@ -129,15 +139,26 @@ module PuppetAgentMgr
       it "should do a background run if the daemon is not present" do
         Common.stubs(:applying?).returns(false)
         Common.stubs(:disabled?).returns(false)
-        Common.expects(:idling?).returns(false).times(4)
-        Common.expects(:daemon_present?).returns(false).twice
+        Common.expects(:idling?).returns(false).twice
+        Common.expects(:daemon_present?).returns(false)
 
         Common.expects(:run_in_foreground).never
         Common.expects(:signal_running_daemon).never
         Common.expects(:run_in_background)
 
         Common.runonce!
-        Common.runonce!(:options_only => true).should == [:run_in_background, []]
+      end
+
+      it "should support returning background run arguments only" do
+        Common.stubs(:applying?).returns(false)
+        Common.stubs(:disabled?).returns(false)
+        Common.expects(:idling?).returns(false).twice
+        Common.expects(:daemon_present?).returns(false)
+
+        Common.expects(:run_in_foreground).never
+        Common.expects(:signal_running_daemon).never
+
+        Common.runonce!(:options_only => true).should ==  [:run_in_background, ["--onetime", "--daemonize", "--color=false"]]
       end
     end
 

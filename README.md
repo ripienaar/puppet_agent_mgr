@@ -152,6 +152,14 @@ You can force splaying:
     >> m.runonce(:splay => true, :splaylimit=100)
     => ""
 
+If you have an application that wants to do its own executing of puppet but
+just want to use this lib to do option parsing etc you can get the run mode
+and command line options by passing :options_only => true, the first argument
+is one of *:run_in_background*, *:signal_running_daemon*, *:run_in_background*:
+
+    >> p.runonce!(:options_only => true, :noop => true, :environment => "production")
+    => [:run_in_background, ["--noop", "--environment production"]]
+
 When doing noop, tags limited, specific host or specific environment runs it
 will raise an exception if the daemon is already present as the only option
 available then is to trigger an immediate run
