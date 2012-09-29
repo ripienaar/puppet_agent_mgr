@@ -32,14 +32,14 @@ module PuppetAgentMgr
       managed_resources.size
     end
 
-    def run_in_foreground(clioptions)
+    def run_in_foreground(clioptions, execute=true)
       command =["puppet", "agent", "--test", "--color=false"]
       command.concat(clioptions)
 
       %x[#{command.join(' ')}]
     end
 
-    def run_in_background(clioptions)
+    def run_in_background(clioptions, execute=true)
       command =["puppet", "agent", "--onetime", "--daemonize", "--color=false"]
       command.concat(clioptions)
 
@@ -103,7 +103,7 @@ module PuppetAgentMgr
     # else a single background run will be attempted but this will fail if a idling
     # daemon is present and :signal_daemon was false
     def runonce!(options={})
-      valid_options = [:noop, :signal_daemon, :foreground_run, :tags, :environment, :server, :splay, :splaylimit]
+      valid_options = [:noop, :signal_daemon, :foreground_run, :tags, :environment, :server, :splay, :splaylimit, :options_only]
 
       options.keys.each do |opt|
         raise("Unknown option %s specified" % opt) unless valid_options.include?(opt)
@@ -128,12 +128,15 @@ module PuppetAgentMgr
       end
 
       if foreground_run
-        run_in_foreground(clioptions)
+        return :foreground_run, clioptions if options[:options_only]
+        return run_in_foreground(clioptions)
       elsif idling? && signal_daemon
-        signal_running_daemon
+        return :signal_running_daemon, clioptions if options[:options_only]
+        return signal_running_daemon
       else
         raise "Cannot run in the background if the daemon is present" if daemon_present?
-        run_in_background(clioptions)
+        return :run_in_background, clioptions if options[:options_only]
+        return run_in_background(clioptions)
       end
     end
 

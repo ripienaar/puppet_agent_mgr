@@ -97,18 +97,20 @@ module PuppetAgentMgr
         Common.expects(:signal_running_daemon).never
 
         Common.runonce!(:foreground_run => true)
+        Common.runonce!(:foreground_run => true, :options_only => true).should == [:foreground_run, []]
       end
 
       it "should support sending a signal to the daemon when it is idling" do
         Common.stubs(:applying?).returns(false)
         Common.stubs(:disabled?).returns(false)
-        Common.expects(:idling?).returns(true).twice
+        Common.expects(:idling?).returns(true).times(4)
 
         Common.expects(:run_in_foreground).never
         Common.expects(:run_in_background).never
         Common.expects(:signal_running_daemon)
 
         Common.runonce!
+        Common.runonce!(:options_only => true).should == [:signal_running_daemon, []]
       end
 
       it "should not signal a daemon when not allowed and it is idling" do
@@ -127,14 +129,15 @@ module PuppetAgentMgr
       it "should do a background run if the daemon is not present" do
         Common.stubs(:applying?).returns(false)
         Common.stubs(:disabled?).returns(false)
-        Common.expects(:idling?).returns(false).twice
-        Common.expects(:daemon_present?).returns(false)
+        Common.expects(:idling?).returns(false).times(4)
+        Common.expects(:daemon_present?).returns(false).twice
 
         Common.expects(:run_in_foreground).never
         Common.expects(:signal_running_daemon).never
         Common.expects(:run_in_background)
 
         Common.runonce!
+        Common.runonce!(:options_only => true).should == [:run_in_background, []]
       end
     end
 
