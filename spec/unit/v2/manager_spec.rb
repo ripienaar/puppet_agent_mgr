@@ -9,7 +9,7 @@ require 'puppet_agent_mgr/v2/manager'
 module PuppetAgentMgr::V2
   describe Manager do
     before :each do
-      @manager = PuppetAgentMgr::V2::Manager.new
+      @manager = PuppetAgentMgr::V2::Manager.new(true)
     end
 
     describe "#enable!" do

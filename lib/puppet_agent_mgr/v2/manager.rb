@@ -10,6 +10,14 @@ module PuppetAgentMgr::V2
       include Unix
     end
 
+    def initialize(testing=false)
+      unless testing
+        $puppet_application_mode = Puppet::Util::RunMode[:agent]
+        Puppet.settings.use :main, :agent
+        Puppet.parse_config
+      end
+    end
+
     # enables the puppet agent, it can now start applying catalogs again
     def enable!
       raise "Already enabled" if enabled?

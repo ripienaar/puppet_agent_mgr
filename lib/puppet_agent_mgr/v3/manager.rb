@@ -11,7 +11,7 @@ module PuppetAgentMgr::V3
     include PuppetAgentMgr::Common
 
     def initialize(testing=false)
-      unless Puppet.settings.app_defaults_initialized?
+      unless testing || Puppet.settings.app_defaults_initialized?
         require 'puppet/util/run_mode'
         Puppet.settings.preferred_run_mode = :agent
         Puppet.settings.initialize_global_settings
