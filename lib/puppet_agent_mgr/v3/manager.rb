@@ -14,8 +14,8 @@ module PuppetAgentMgr::V3
       unless Puppet.settings.app_defaults_initialized?
         require 'puppet/util/run_mode'
         Puppet.settings.preferred_run_mode = :agent
-        run_mode = Puppet::Util::RunMode[ Puppet.settings.preferred_run_mode ]
-        Puppet.settings.initialize_app_defaults(Puppet::Settings.app_defaults_for_run_mode(run_mode))
+        Puppet.settings.initialize_global_settings
+        Puppet.settings.initialize_app_defaults(Puppet::Settings.app_defaults_for_run_mode(Puppet.run_mode))
       end
     end
 
