@@ -2,6 +2,9 @@ require 'puppet_agent_mgr/common'
 
 module PuppetAgentMgr
   def self.manager
+    # puppet 2 requires this, 3 probably just ignores it
+    $puppet_application_name = :agent
+
     require 'puppet'
     require 'json'
 
